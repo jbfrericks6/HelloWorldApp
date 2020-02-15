@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
 import android.view.View;
+
 public class MainActivity extends AppCompatActivity {
 
     @Override
@@ -15,9 +16,17 @@ public class MainActivity extends AppCompatActivity {
 // TextView textView1 = new TextView("hello");
         final Button button2;
         button2 = findViewById(R.id.button1);
+        final Button capsButton = findViewById(R.id.capsButton);
         final TextView tv;
         tv = findViewById(R.id.textView);
         tv.setVisibility(View.INVISIBLE);
+        capsButton.setOnClickListener(new View.OnClickListener(){
+            public void onClick(View v){
+                tv.setAllCaps(true);
+            }
+
+        });
+
         button2.setOnClickListener(new View.OnClickListener(){
 
             public void onClick(View v){
@@ -29,4 +38,5 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
 }
