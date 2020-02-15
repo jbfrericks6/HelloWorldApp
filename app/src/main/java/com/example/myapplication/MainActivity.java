@@ -23,6 +23,11 @@ public class MainActivity extends AppCompatActivity {
         capsButton.setOnClickListener(new View.OnClickListener(){
             public void onClick(View v){
                 tv.setAllCaps(true);
+                if(tv.getText()=="123456789"){
+                    tv.setText("Hello World");
+                }else {
+                    tv.setText("123456789");
+                }
             }
 
         });
