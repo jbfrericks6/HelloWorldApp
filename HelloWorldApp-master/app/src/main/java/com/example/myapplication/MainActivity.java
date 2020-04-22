@@ -1,23 +1,18 @@
 package com.example.myapplication;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
-import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.os.Environment;
-import android.view.View;
-import android.widget.Button;
+import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import android.view.View;
+import android.widget.Button;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import java.io.IOException;
-import java.util.UUID;
-import org.w3c.dom.Text;
-
 
 import be.tarsos.dsp.AudioDispatcher;
 import be.tarsos.dsp.AudioEvent;
@@ -26,176 +21,153 @@ import be.tarsos.dsp.io.android.AudioDispatcherFactory;
 import be.tarsos.dsp.pitch.PitchDetectionHandler;
 import be.tarsos.dsp.pitch.PitchDetectionResult;
 import be.tarsos.dsp.pitch.PitchProcessor;
-
+import be.tarsos.dsp.SilenceDetector;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button startRecord, stopRecord;
+
+
+
+    /*Button startRecord, stopRecord;       //Old recording button
     String save = "";
-    MediaRecorder audioRecorder;
+    MediaRecorder audioRecorder;*/
 
     final int REQUEST_PERMISSION_CODE = 1000;
 
-    TextView pitchText;
-    TextView noteText;
+    //TextView pitchText;
+    TextView noteText;                      //Hold the textview for frequency and loudness
+    TextView loudText;
 
+
+
+    AudioDispatcher dispatcher;
+    int On = 0;
+
+    @SuppressLint("InvalidWakeLockTag")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
 
-        AudioDispatcher dispatcher =
-                AudioDispatcherFactory.fromDefaultMicrophone(22050,1024,0);
-
-        PitchDetectionHandler pdh = new PitchDetectionHandler() {
-            @Override
-            public void handlePitch(PitchDetectionResult res, AudioEvent e){
-                final float pitchInHz = res.getPitch();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        processPitch(pitchInHz);
-                    }
-                });
-            }
-        };
-        AudioProcessor pitchProcessor = new PitchProcessor(PitchProcessor.PitchEstimationAlgorithm.FFT_YIN, 22050, 1024, pdh);
-        dispatcher.addAudioProcessor(pitchProcessor);
-
-        Thread audioThread = new Thread(dispatcher, "Audio Thread");
-        audioThread.start();
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
-        pitchText = (TextView) findViewById(R.id.pitchText);
-        noteText = (TextView) findViewById(R.id.noteText);
 
-        if(!checkPermissionFromDevice()) {
-            requestPermission();
-        }
-// TextView textView1 = new TextView("hello");
-        final Button button2;
-        button2 = findViewById(R.id.button1);
-        final Button capsButton = findViewById(R.id.capsButton);
-        final TextView tv;
-        tv = findViewById(R.id.textView);
-        tv.setVisibility(View.INVISIBLE);
-        capsButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                tv.setAllCaps(true);
-                if (tv.getText() == "123456789") {
-                    tv.setText("Hello World");
-                } else {
-                    tv.setText("123456789");
+
+            dispatcher =
+                    AudioDispatcherFactory.fromDefaultMicrophone(22050, 1024, 0);           //Using Tarsos dispatcher
+                                                                                                      //Pitchhandler class
+            PitchDetectionHandler pdh = new PitchDetectionHandler() {
+                @Override
+                public void handlePitch(PitchDetectionResult res, AudioEvent e) {
+                    final float pitchInHz = res.getPitch();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            processPitch(pitchInHz);
+                        }
+                    });
                 }
-            }
+            };
+            AudioProcessor pitchProcessor = new PitchProcessor(PitchProcessor.PitchEstimationAlgorithm.FFT_YIN, 22050, 1024, pdh);
+            dispatcher.addAudioProcessor(pitchProcessor);
 
-        });
 
-        button2.setOnClickListener(new View.OnClickListener() {
+            Thread audioThread = new Thread(dispatcher, "Audio Thread");                        //Thread will be used for loudness and pitch
+            audioThread.start();                                                                      //Replaces Mediarecorder
 
-            public void onClick(View v) {
-                if (tv.getVisibility() == View.INVISIBLE) {
-                    tv.setVisibility(View.VISIBLE);
-                } else {
-                    tv.setVisibility(View.INVISIBLE);
-                }
-            }
-        });
-
-        startRecord = (Button)findViewById(R.id.startRecord);
-        stopRecord = (Button)findViewById(R.id.stopRecord);
+            //super.onCreate(savedInstanceState);
+            setContentView(R.layout.activity_main);
 
 
 
 
-        startRecord.setOnClickListener(new View.OnClickListener() {
+
+
+            //pitchText = (TextView) findViewById(R.id.pitchText);
+            noteText = (TextView) findViewById(R.id.noteText);                                       //Find their xml ids
+            loudText = (TextView) findViewById(R.id.loudText);
+
+        Button Start  = findViewById(R.id.start);                                                   //Find their xml ids
+        Button Stop  = findViewById(R.id.stopID);
+
+        //pitchText.setVisibility(View.GONE);
+        noteText.setVisibility(View.GONE);                                                          //Start/stop usage by hiding
+        loudText.setVisibility(View.GONE);
+
+        Stop.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                if(checkPermissionFromDevice())
-
-                {
-
-                    save = Environment.getExternalStorageDirectory()
-                            .getAbsolutePath()+"/" + UUID.randomUUID().toString()+"_app_Recording.3gp";
-                    setupAudioRecorder();
-                    try {
-                        audioRecorder.prepare();
-                        audioRecorder.start();
-                    }
-                    catch(IOException e) {
-                        e.printStackTrace();
-                    }
-
-                    Toast.makeText(MainActivity.this, "Recording", Toast.LENGTH_SHORT).show();
-                }
-                else
-                {
-                    requestPermission();
-                }
+            public void onClick(View v) {                                                             //button click actions
+                //pitchText.setVisibility(View.GONE);
+                noteText.setVisibility(View.GONE);
+                loudText.setVisibility(View.GONE);
             }
         });
 
-        stopRecord.setOnClickListener(new View.OnClickListener() {
+        Start.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                audioRecorder.stop();
-                stopRecord.setEnabled(false);
-                startRecord.setEnabled(true);
-                setupAudioRecorder();
-
+            public void onClick(View v) {
+                //pitchText.setVisibility(View.VISIBLE);
+                noteText.setVisibility(View.VISIBLE);
+                loudText.setVisibility(View.VISIBLE);
             }
         });
-
 
 
     }
 
 
 
-    public void processPitch(float pitchInHz) {
+    SilenceDetector silenceDetector;                                                               //From library handles decibel conversions
 
-        pitchText.setText("" + pitchInHz);
 
-        if(pitchInHz >= 110 && pitchInHz < 123.47) {
+    public void processPitch(float pitchInHz) {                                                 //Text displaying for frequency and loudness
+                                                                                                //As well as respective conditions
+        //pitchText.setText("" + pitchInHz);                //Old allowed continous pitch display
+
+        if(pitchInHz >= 375 && pitchInHz < 425) {
             //A
-            noteText.setText("A");
+            noteText.setText("Frequency 400 Found");
         }
-        else if(pitchInHz >= 123.47 && pitchInHz < 130.81) {
+        else if(pitchInHz >= 575 && pitchInHz < 625) {
             //B
-            noteText.setText("B");
+            noteText.setText("Frequency 600 Found");
         }
-        else if(pitchInHz >= 130.81 && pitchInHz < 146.83) {
+        else if(pitchInHz >= 775 && pitchInHz < 825) {
             //C
-            noteText.setText("C");
+            noteText.setText("Frequency 800 Found");
         }
-        else if(pitchInHz >= 146.83 && pitchInHz < 164.81) {
-            //D
-            noteText.setText("D");
+        else{
+            noteText.setText("Searching for frequency...");
         }
-        else if(pitchInHz >= 164.81 && pitchInHz <= 174.61) {
-            //E
-            noteText.setText("E");
+
+        if(silenceDetector == null){
+             silenceDetector= new SilenceDetector();
+            dispatcher.addAudioProcessor(silenceDetector);
+//            silenceDetector.process(new AudioEvent(){})
         }
-        else if(pitchInHz >= 174.61 && pitchInHz < 185) {
-            //F
-            noteText.setText("F");
+        Log.d("DECI::::", "" + silenceDetector.currentSPL());
+        double decibel = silenceDetector.currentSPL();
+        if(decibel >= -70)
+        {
+            loudText.setText("3");
         }
-        else if(pitchInHz >= 185 && pitchInHz < 196) {
-            //G
-            noteText.setText("G");
+        else if(decibel >= -80 && decibel < -70)
+        {
+            loudText.setText("2");
         }
+        else if(decibel < -80)
+        {
+            loudText.setText("1");
+        }
+
+        //loudText.setText(""+silenceDetector.currentSPL());                    //Old allowed continuous DB display
+
+
+
+
     }
 
-
-    private void setupAudioRecorder() {
-        audioRecorder = new MediaRecorder();
-        audioRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        audioRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        audioRecorder.setAudioEncoder(MediaRecorder.OutputFormat.AMR_NB);
-        audioRecorder.setOutputFile(save);
-    }
-
+    //Permissions of storage and mic
 
     private void requestPermission() {
         ActivityCompat.requestPermissions(this,new String[] {
